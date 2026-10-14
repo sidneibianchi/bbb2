@@ -39,6 +39,7 @@ import {
   TimeSignature,
   TrackDefinition,
   RhythmicResolution,
+  cleanInstrumentName,
 } from './types/rhythm';
 import {
   syncSamplesFromServer,
@@ -67,7 +68,7 @@ export default function App() {
       name: cleanName,
       timeSignature: timeSig as any,
       barsCount: p.barsCount === 2 ? 1 : (p.barsCount || 1),
-      resolution: p.resolution === '1/16' ? '1/32' : (p.resolution || '1/32'),
+      resolution: p.resolution === '1/64' ? '1/64' : (p.resolution || '1/32'),
     };
   };
 
@@ -1145,8 +1146,16 @@ export default function App() {
   const handleResolutionChange = (resolution: RhythmicResolution) => {
     setProject((prev) => {
       const subPerBeat =
-        resolution === '1/8' ? 2 : resolution === '1/8T' ? 3 : resolution === '1/16' ? 4 : resolution === '1/16T' ? 6 : 8;
-      const targetSteps = Math.min(32, Math.max(16, subPerBeat * 4 * (prev.barsCount || 1)));
+        resolution === '1/64'
+          ? 16
+          : resolution === '1/32'
+          ? 8
+          : resolution === '1/16'
+          ? 4
+          : resolution === '1/8'
+          ? 2
+          : 8;
+      const targetSteps = Math.min(64, Math.max(16, subPerBeat * 4 * (prev.barsCount || 1)));
       const updatedParts = { ...prev.parts };
       Object.keys(updatedParts).forEach((pKey) => {
         const pId = pKey as SongPartId;
@@ -1176,8 +1185,16 @@ export default function App() {
   const handleBarsCountChange = (barsCount: number) => {
     setProject((prev) => {
       const subPerBeat =
-        prev.resolution === '1/8' ? 2 : prev.resolution === '1/8T' ? 3 : prev.resolution === '1/16' ? 4 : prev.resolution === '1/16T' ? 6 : 8;
-      const targetSteps = Math.min(32, Math.max(16, subPerBeat * 4 * barsCount));
+        prev.resolution === '1/64'
+          ? 16
+          : prev.resolution === '1/32'
+          ? 8
+          : prev.resolution === '1/16'
+          ? 4
+          : prev.resolution === '1/8'
+          ? 2
+          : 8;
+      const targetSteps = Math.min(64, Math.max(16, subPerBeat * 4 * barsCount));
       const updatedParts = { ...prev.parts };
       Object.keys(updatedParts).forEach((pKey) => {
         const pId = pKey as SongPartId;
@@ -1624,12 +1641,23 @@ export default function App() {
     });
   };
 
-  const handleAddTrackWithSample = (sampleId: string, sampleName: string) => {
+  const handleAddTrackWithSample = (sampleId: string, sampleName: string, color?: string) => {
+    const samplePalette = [
+      '#10b981', // verde esmeralda
+      '#06b6d4', // ciano
+      '#f97316', // laranja
+      '#8b5cf6', // violeta
+      '#ec4899', // rosa
+      '#3b82f6', // azul
+      '#ef4444', // vermelho
+      '#f59e0b', // âmbar
+    ];
+    const cleanName = cleanInstrumentName(sampleName);
     handleAddTrack({
-      name: sampleName,
+      name: cleanName,
       category: 'custom',
       soundType: 'custom',
-      color: '#f59e0b',
+      color: chosenColor,
       volume: 0.85,
       pan: 0,
       tune: 0,
@@ -1999,7 +2027,7 @@ export default function App() {
               playingTick={currentTick}
               activeTrackSteps={activeTrackSteps}
               isPlaying={isPlaying}
-              resolution={project.resolution || '1/16'}
+              resolution={project.resolution || '1/32'}
               barsCount={project.barsCount || 1}
               timeSignature={project.timeSignature}
               onResolutionChange={handleResolutionChange}
@@ -2016,6 +2044,8 @@ export default function App() {
               onDeleteTrack={handleDeleteTrack}
               onRemoveTrackSample={handleRemoveTrackSample}
               onMoveTrack={handleMoveTrack}
+              onUpdateTrackColor={(tId, color) => handleUpdateTrackParams(tId, { color })}
+              onUpdateTrackName={(tId, name) => handleUpdateTrackParams(tId, { name })}
               onAddTrackClick={() => setIsAddTrackOpen(true)}
             />
           </div>
